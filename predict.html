@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Media Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f6f8 0%, #e9ecef 100%);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #111 0%, #222 100%);
+      color: #fff;
+      padding: 12px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    .container {
+      flex: 1;
+      max-width: 1200px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    /* LOCK SCREEN */
+    #lockScreen, #resetScreen {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
+    .lock-box {
+      background: rgba(30,30,30,0.9);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 90%;
+    }
+    #lockScreen input, #resetScreen input {
+      padding: 12px;
+      width: 250px;
+      margin: 12px 0;
+      border-radius: 8px;
+      border: 2px solid #444;
+      background: #222;
+      color: white;
+      font-size: 16px;
+      text-align: center;
+      letter-spacing: 3px;
+    }
+    #lockScreen input:focus, #resetScreen input:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+    #lockScreen button, #resetScreen button {
+      padding: 12px 24px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    #lockScreen button.danger, #resetScreen button.danger {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: #fff;
+    }
+    #lockScreen button.danger:hover {
+      background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+      transform: translateY(-2px);
+    }
+    .primary-btn {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      color: white;
+    }
+    .primary-btn:hover {
+      background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+      transform: translateY(-2px);
+    }
+
+    /* GRID */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .filters button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      background: #e9ecef;
+      color: #495057;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    .filters button:hover {
+      background: #dee2e6;
+      transform: translateY(-2px);
+    }
+    .filters button.active {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      border: 1px solid #e9ecef;
+      position: relative;
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+    .card-image-container {
+      width: 100%;
+      height: 140px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .video-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .card:hover .video-overlay {
+      opacity: 1;
+    }
+    .video-overlay i {
+      font-size: 2.5em;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .card .info {
+      padding: 12px;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #333;
+      font-weight: 500;
+    }
+    .card i {
+      color: #007bff;
+      margin-right: 8px;
+      font-size: 14px;
+    }
+
+    /* MODAL */
+    #mediaModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+    }
+    #mediaModal span.close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: transform 0.3s;
+      z-index: 1000;
+    }
+    #mediaModal span.close:hover {
+      transform: scale(1.2);
+      color: #dc3545;
+    }
+    #modalVideo, #modalImage {
+      max-width: 95%;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    #modalTitle {
+      color: white;
+      margin: 20px;
+      font-size: 1.4em;
+      text-align: center;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 20px;
+      border-radius: 20px;
+      max-width: 80%;
+    }
+
+    /* Loading State */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 300px;
+      font-size: 1.2em;
+      color: #666;
+      grid-column: 1 / -1;
+    }
+    .loading::after {
+      content: '';
+      width: 24px;
+      height: 24px;
+      border: 3px solid #dee2e6;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 12px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ENHANCED FOOTER */
+    footer {
+      background: linear-gradient(135deg, #111 0%, #222 100%);
+      color: #ccc;
+      padding: 40px 20px 20px;
+      margin-top: auto;
+      border-top: 1px solid #333;
+    }
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 40px;
+    }
+    .footer-section h4 {
+      color: #fff;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      position: relative;
+      padding-bottom: 10px;
+    }
+    .footer-section h4::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background: #28a745;
+      border-radius: 2px;
+    }
+    .footer-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .footer-section li {
+      margin: 12px 0;
+      transition: transform 0.3s;
+    }
+    .footer-section li:hover {
+      transform: translateX(5px);
+    }
+    .footer-section a {
+      color: #ccc;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-section a:hover {
+      color: #28a745;
+    }
+    .social-icons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .social-icons a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+      font-size: 1.2rem;
+      transition: all 0.3s;
+    }
+    .social-icons a:hover {
+      background: #28a745;
+      color: white;
+      transform: translateY(-3px);
+    }
+    .footer-bottom {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+      font-size: 0.9rem;
+      color: #888;
+    }
+    .footer-bottom a {
+      color: #28a745;
+      margin: 0 10px;
+      text-decoration: none;
+    }
+    .footer-bottom a:hover {
+      text-decoration: underline;
+    }
+
+    /* Media Queries */
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+      }
+      .filters {
+        justify-content: center;
+      }
+      .lock-box {
+        padding: 30px 20px;
+      }
+      #lockScreen input, #resetScreen input {
+        width: 200px;
+      }
+      .card-image-container {
+        height: 120px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .footer-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 30px;
+      }
+      .footer-section h4::after {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .social-icons {
+        justify-content: center;
+      }
+      .footer-section li:hover {
+        transform: none;
+      }
+      .card .info {
+        font-size: 13px;
+        padding: 8px;
+      }
+      .card-image-container {
+        height: 100px;
+      }
+    }
+
+    /* Logout Button */
+    #logoutBtn {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: none;
+    }
+    #logoutBtn:hover {
+      background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+      transform: translateY(-50%) scale(1.05);
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h2 style="margin: 0;">📁 Media Hub</h2>
+  <button id="logoutBtn">
+    <i class="fas fa-sign-out-alt"></i> Logout
+  </button>
+</header>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-box">
+    <h3 style="margin-top: 0;">🔒 Enter Access PIN</h3>
+    <input id="pinInput" type="password" placeholder="4-digit PIN" maxlength="4" 
+           pattern="\d{4}" inputmode="numeric" 
+           oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    <br>
+    <button class="primary-btn" onclick="unlock()">Access</button>
+    <hr style="margin: 20px 0; border-color: #444;">
+    <button class="danger" onclick="showReset()">Reset PIN</button>
+  </div>
+</div>
+
+<!-- RESET PIN -->
+<div id="resetScreen">
+  <div class="lock-box">
+    <h3 style="margin-top: 0;">♻ Reset PIN</h3>
+    <input id="oldPin" type="password" placeholder="Old PIN" maxlength="4"
+           pattern="\d{4}" inputmode="numeric" 
+           oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    <br>
+    <input id="newPin" type="password" placeholder="New 4-digit PIN" maxlength="4"
+           pattern="\d{4}" inputmode="numeric" 
+           oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    <br>
+    <button class="primary-btn" onclick="resetPin()">Update PIN</button>
+    <br>
+    <button style="margin-top: 10px;" onclick="location.reload()">Cancel</button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="content" class="container" style="display:none">
+  <div class="filters">
+    <button class="active" onclick="filter('all')">All</button>
+    <button onclick="filter('video')">Videos</button>
+    <button onclick="filter('nudes')">allMedia</button>
+    <button onclick="filter('A')">lesbian </button>
+    <button onclick="filter('B')">straigth</button>
+    <button onclick="filter('C')">trending </button>
+    <button onclick="filter('D')">nudes</button>
+  </div>
+
+  <div id="mediaGrid" class="grid">
+    <div class="loading">Loading media...</div>
+  </div>
+</div>
+
+<!-- MEDIA MODAL -->
+<div id="mediaModal">
+  <span class="close" onclick="closeModal()">×</span>
+  <video id="modalVideo" controls autoplay style="display:none;"></video>
+  <script>
+  atOptions = {
+    'key' : 'ff1cb6df66cf29964080ba0dff60caf2',
+    'format' : 'iframe',
+    'height' : 60,
+    'width' : 468,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/ff1cb6df66cf29964080ba0dff60caf2/invoke.js"></script>
+  <img id="modalImage" style="display:none;">
+  <div id="modalTitle"></div>
+</div>
+
+<!-- ENHANCED FOOTER -->
+<footer>
+  <div class="footer-container">
+
+    <div class="footer-section">
+      <h4>Media Hub</h4>
+      <script>
+  atOptions = {
+    'key' : 'ff1cb6df66cf29964080ba0dff60caf2',
+    'format' : 'iframe',
+    'height' : 60,
+    'width' : 468,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/ff1cb6df66cf29964080ba0dff60caf2/invoke.js"></script>
+      <p>Your personal collection of videos and images — securely stored and easily browsed.</p>
+      <div class="social-icons">
+        <a href="#" title="Twitter/X"><i class="fab fa-x-twitter"></i></a>
+        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
+        <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+      </div>
+    </div>
+
+    <div class="footer-section">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="#"><i class="fas fa-home"></i> Home</a></li>
+        <li><a href="#"><i class="fas fa-upload"></i> Upload Media</a></li>
+        <li><a href="#"><i class="fas fa-heart"></i> Favorites</a></li>
+        <li><a href="#"><i class="fas fa-folder"></i> Categories</a></li>
+        <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-section">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="#"><i class="fas fa-question-circle"></i> Help Center</a></li>
+        <li><a href="#"><i class="fas fa-envelope"></i> Contact Us</a></li>
+        <li><a href="#"><i class="fas fa-bug"></i> Report Issue</a></li>
+        <li><a href="#"><i class="fas fa-info-circle"></i> FAQ</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-section">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#"><i class="fas fa-shield-alt"></i> Privacy Policy</a></li>
+        <li><a href="#"><i class="fas fa-file-contract"></i> Terms of Use</a></li>
+        <li><a href="#"><i class="fas fa-cookie-bite"></i> Cookie Policy</a></li>
+        <li><a href="#"><i class="fas fa-gavel"></i> Content Guidelines</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    © 2026 Media Hub — Built with ❤️ in Nairobi<br>
+    <a href="#">Privacy Policy</a> |
+    <a href="#">Terms of Use</a> |
+    <a href="#">Cookies</a>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEBhUCFRstyVsZYZ2q6x-SjQZht05dodM",
+  authDomain: "video-ed5e4.firebaseapp.com",
+  projectId: "video-ed5e4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let allMedia = [];
+
+/* PIN LOGIC */
+const lockScreen = document.getElementById('lockScreen');
+const resetScreen = document.getElementById('resetScreen');
+const content = document.getElementById('content');
+const pinInput = document.getElementById('pinInput');
+const logoutBtn = document.getElementById('logoutBtn');
+
+const savedPin = localStorage.getItem("accessPIN");
+
+// Always show lock screen on page load
+lockScreen.style.display = "flex";
+content.style.display = "none";
+
+window.unlock = () => {
+  const val = pinInput.value.trim();
+  if (val.length !== 4 || !/^\d{4}$/.test(val)) {
+    alert("Please enter a valid 4-digit PIN (numbers only)");
+    return;
+  }
+  
+  if (!savedPin) {
+    // First time setup - set PIN
+    localStorage.setItem("accessPIN", val);
+    location.reload();
+  } else if (val === savedPin) {
+    lockScreen.style.display = "none";
+    content.style.display = "block";
+    logoutBtn.style.display = "block";
+    loadMedia();
+  } else {
+    alert("Incorrect PIN. Please try again.");
+    pinInput.value = "";
+    pinInput.focus();
+  }
+};
+
+// Enter key support for PIN input
+pinInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') unlock();
+});
+
+window.showReset = () => {
+  lockScreen.style.display = "none";
+  resetScreen.style.display = "flex";
+  document.getElementById('oldPin').focus();
+};
+
+window.resetPin = () => {
+  const old = document.getElementById('oldPin').value;
+  const neu = document.getElementById('newPin').value;
+  
+  if (old.length !== 4 || neu.length !== 4) {
+    alert("Both PINs must be 4 digits");
+    return;
+  }
+  
+  if (old === savedPin) {
+    localStorage.setItem("accessPIN", neu);
+    alert("PIN updated successfully!");
+    location.reload();
+  } else {
+    alert("Invalid old PIN");
+    document.getElementById('oldPin').value = "";
+    document.getElementById('oldPin').focus();
+  }
+};
+
+/* AUTO-LOCK WHEN LEAVING / HIDING PAGE */
+const LOCK_FLAG_KEY = "mediaHub_shouldLockOnVisible";
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    sessionStorage.setItem(LOCK_FLAG_KEY, "true");
+  }
+});
+
+function checkShouldLock() {
+  if (sessionStorage.getItem(LOCK_FLAG_KEY) === "true" && savedPin) {
+    lockScreen.style.display = "flex";
+    content.style.display = "none";
+    logoutBtn.style.display = "none";
+    pinInput.value = "";
+    sessionStorage.removeItem(LOCK_FLAG_KEY);
+  }
+}
+
+window.addEventListener("pageshow", checkShouldLock);
+checkShouldLock();
+
+/* LOGOUT FUNCTIONALITY */
+logoutBtn.addEventListener('click', () => {
+  if (confirm("Are you sure you want to logout?")) {
+    sessionStorage.setItem(LOCK_FLAG_KEY, "true");
+    lockScreen.style.display = "flex";
+    content.style.display = "none";
+    logoutBtn.style.display = "none";
+    pinInput.value = "";
+  }
+});
+
+/* LOAD MEDIA */
+async function loadMedia() {
+  const grid = document.getElementById('mediaGrid');
+  
+  try {
+    const snap = await getDocs(collection(db, "videos"));
+    allMedia = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Add fallback for missing properties
+    allMedia = allMedia.map(item => ({
+      ...item,
+      type: item.type || 'image',
+      title: item.title || 'Untitled',
+      category: item.category || 'A',
+      // Ensure coverImageUrl exists, fallback to imageUrl or thumbnail
+      coverImageUrl: item.coverImageUrl || item.imageUrl || item.thumbnailUrl || ''
+    }));
+    
+    render(allMedia);
+  } catch (e) {
+    console.error("Firestore error:", e);
+    grid.innerHTML = `
+      <div style="text-align:center; color:#dc3545; grid-column:1/-1; padding:40px;">
+        <i class="fas fa-exclamation-triangle" style="font-size:2em; margin-bottom:10px;"></i>
+        <h3>Connection Error</h3>
+        <p>Could not load media. Please check your connection.</p>
+        <button onclick="location.reload()" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer;">
+          Retry
+        </button>
+      </div>
+    `;
+  }
+}
+
+function render(list) {
+  const grid = document.getElementById('mediaGrid');
+  grid.innerHTML = "";
+
+  if (!list.length) {
+    grid.innerHTML = `
+      <div style="text-align:center; color:#777; grid-column:1/-1; padding:40px;">
+        <i class="fas fa-inbox" style="font-size:3em; opacity:0.5; margin-bottom:20px;"></i>
+        <h3>No Media Found</h3>
+        <p>Upload some media to get started!</p>
+      </div>
+    `;
+    return;
+  }
+
+  list.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    
+    // Determine the image to display
+    let displayImage;
+    if (m.type === 'video') {
+      // For videos: Use coverImageUrl first, then fallback to imageUrl/thumbnail
+      displayImage = m.coverImageUrl || m.imageUrl || 'https://via.placeholder.com/200x140?text=Video+Cover';
+    } else {
+      // For images: Use imageUrl or coverImageUrl
+      displayImage = m.imageUrl || m.coverImageUrl || 'https://via.placeholder.com/200x140?text=Image';
+    }
+    
+    const icon = m.type === 'video' ? 'fa-video' : 'fa-image';
+    const category = m.category ? `<span style="float:right; background:#e9ecef; padding:2px 8px; border-radius:10px; font-size:11px;">${m.category}</span>` : '';
+    
+    card.innerHTML = `
+      <div class="card-image-container">
+        <img src="${displayImage}" alt="${m.title || 'Media'}" loading="lazy" 
+             onerror="this.src='https://via.placeholder.com/200x140?text=No+Preview'">
+        ${m.type === 'video' ? '<div class="video-overlay"><i class="fas fa-play-circle"></i></div>' : ''}
+      </div>
+      <div class="info">
+        <i class="fas ${icon}"></i> ${m.title || 'Untitled'}
+        ${category}
+      </div>
+    `;
+    card.onclick = () => openMedia(m);
+    grid.appendChild(card);
+  });
+}
+
+function openMedia(m) {
+  const modal = document.getElementById('mediaModal');
+  const videoEl = document.getElementById('modalVideo');
+  const imgEl = document.getElementById('modalImage');
+  const titleEl = document.getElementById('modalTitle');
+
+  videoEl.style.display = 'none'; 
+  imgEl.style.display = 'none';
+  videoEl.pause(); 
+  videoEl.src = '';
+
+  const mainUrl = m.url || m.videoUrl || m.imageUrl;
+  if (!mainUrl) {
+    alert("No playable URL found for this media");
+    return;
+  }
+
+  titleEl.textContent = m.title || 'Untitled';
+
+  if (m.type === 'video') { 
+    videoEl.src = mainUrl; 
+    videoEl.style.display = 'block'; 
+    videoEl.play().catch(e => console.log("Autoplay prevented:", e)); 
+  } else { 
+    imgEl.src = mainUrl; 
+    imgEl.style.display = 'block'; 
+  }
+
+  modal.style.display = 'flex';
+  
+  // Add keyboard navigation for modal
+  document.addEventListener('keydown', handleModalKeydown);
+}
+
+function handleModalKeydown(e) {
+  if (e.key === 'Escape') closeModal();
+}
+
+window.closeModal = () => {
+  const modal = document.getElementById('mediaModal');
+  const video = document.getElementById('modalVideo');
+  video.pause(); 
+  video.src = '';
+  modal.style.display = 'none';
+  document.removeEventListener('keydown', handleModalKeydown);
+};
+
+window.filter = function(f) {
+  document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  let filtered = allMedia;
+  if (f === 'video' || f === 'image') {
+    filtered = allMedia.filter(x => x.type === f);
+  } else if (f !== 'all') {
+    filtered = allMedia.filter(x => x.category === f);
+  }
+  
+  render(filtered);
+};
+
+// Initialize PIN input focus
+if (lockScreen.style.display === 'flex') {
+  setTimeout(() => pinInput.focus(), 100);
+}
+</script>
+
+</body>
+</html>
