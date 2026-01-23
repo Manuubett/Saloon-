@@ -397,7 +397,35 @@
       .card-image-container {
         height: 100px;
       }
-    }
+    }.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #111;
+  color: #fff;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.install-app-btn {
+  background: #4361ee;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.install-app-btn:hover {
+  background: #2d3edb;
+  transform: translateY(-1px);
+}
 
     /* Logout Button */
     #logoutBtn {
@@ -429,7 +457,20 @@
   <button id="logoutBtn">
     <i class="fas fa-sign-out-alt"></i> Logout
   </button>
+</header><header class="site-header">
+  <div class="logo">MyWebsite</div>
+
+
+
+  <a href="https://raw.githubusercontent.com/Manuubett/Saloon-/main/app-release.apk"
+     class="install-app-btn"
+     download>
+     📱 Install App
+  </a>
 </header>
+</header>
+
+
 
 <!-- LOCK SCREEN -->
 <div id="lockScreen">
